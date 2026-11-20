@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "description": "RSI-Flow Vibe Coding Visual Studio & WHU 2026-2027 Competition Scout Workflow",
-  "license": "Apache-2.0",
+  "license": "UNLICENSED",
   "scripts": {
     "setup": "npm --prefix packages/rsi-flow-react install && npm --prefix packages/rsi-flow-react run build && npm --prefix packages/rsi-flow-visual install",
     "build": "npm --prefix packages/rsi-flow-react run build && npm --prefix packages/rsi-flow-visual run build",
