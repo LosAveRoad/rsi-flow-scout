@@ -1,0 +1,63 @@
+{
+  "id": "FLOW_WHU_TRACK_SCORING",
+  "type": "flow",
+  "title": "武大竞赛级别核验与技术契合度评分（嵌套子流程）",
+  "description": "由主流程 SCOUT_EVAL_SUBFLOW 调用：核验官方认定级别 → 校验2027奇数年办赛窗口 → 计算底座复用契合分",
+  "params": [
+    { "name": "candidateTracks", "type": "List" }
+  ],
+  "results": [
+    { "name": "level", "type": "String" },
+    { "name": "fitScore", "type": "Integer" }
+  ],
+  "nodes": [
+    {
+      "id": "CHECK_WHU_LEVEL",
+      "type": "event",
+      "title": "核验武大官方认定级别",
+      "description": "区分国家级与省部级（如识别 #109 服务外包在武大为省部级）",
+      "reference": "SCORE_VERIFY_WHU_LEVEL",
+      "results": [{ "name": "level", "type": "String" }]
+    },
+    {
+      "id": "CHECK_ODD_YEAR_2027",
+      "type": "event",
+      "title": "校验2027奇数年办赛窗口",
+      "description": "匹配奇数年 #148 大挑（自强杯），过滤偶数年停办国赛项",
+      "reference": "SCORE_VERIFY_YEAR_WINDOW",
+      "results": [{ "name": "yearValid", "type": "Boolean" }]
+    },
+    {
+      "id": "CALC_RSI_FIT_SCORE",
+      "type": "event",
+      "title": "计算 Vibe Coding 与编排契合分",
+      "description": "结合开源仓库、软件系统演示与可视化交互维度综合打分",
+      "reference": "SCORE_COMPUTE_ALIGNMENT",
+      "results": [{ "name": "fitScore", "type": "Integer" }]
+    },
+    {
+      "id": "MARK_DEFERRED",
+      "type": "event",
+      "title": "标记跨年顺延赛事",
+      "description": "偶数年赛事归档至下一周期观察表",
+      "reference": "SCORE_MARK_NEXT_CYCLE",
+      "results": [{ "name": "fitScore", "type": "Integer" }]
+    }
+  ],
+  "routes": [
+    { "source": "start", "target": "CHECK_WHU_LEVEL" },
+    { "source": "CHECK_WHU_LEVEL", "target": "CHECK_ODD_YEAR_2027" },
+    {
+      "source": "CHECK_ODD_YEAR_2027",
+      "target": "CALC_RSI_FIT_SCORE",
+      "condition": "yearValid == true"
+    },
+    {
+      "source": "CHECK_ODD_YEAR_2027",
+      "target": "MARK_DEFERRED",
+      "condition": "default"
+    },
+    { "source": "CALC_RSI_FIT_SCORE", "target": "end" },
+    { "source": "MARK_DEFERRED", "target": "end" }
+  ]
+}

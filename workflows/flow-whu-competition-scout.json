@@ -1,0 +1,96 @@
+{
+  "id": "FLOW_WHU_COMPETITION_SCOUT",
+  "type": "flow",
+  "title": "武汉大学 2026-2027 学科竞赛智能调研与分级流程",
+  "description": "基于武大本科生学科竞赛认定信息表（153项）：白名单加载 → 赛道初筛 → 嵌套子流程评分 → S/A/B 三档条件分支立项",
+  "params": [
+    { "name": "seasonWindow", "type": "String" },
+    { "name": "teamTrack", "type": "String" }
+  ],
+  "results": [
+    { "name": "tierDecision", "type": "String" },
+    { "name": "fitScore", "type": "Integer" }
+  ],
+  "nodes": [
+    {
+      "id": "SCOUT_LOAD_WHU_LIST",
+      "type": "event",
+      "title": "加载武大2026认定白名单",
+      "description": "解析武大153项认定赛事级别、推荐学院与奇偶年备注",
+      "reference": "WHU_LOAD_RECOGNITION_LIST",
+      "params": [{ "name": "seasonWindow", "type": "String" }],
+      "results": [{ "name": "rawCatalog", "type": "List" }]
+    },
+    {
+      "id": "SCOUT_FILTER_CS_AI",
+      "type": "event",
+      "title": "筛选计算机与AI相关赛道",
+      "description": "锁定计院/网安/AI院/遥感/工创/团委推荐的高契合赛事",
+      "reference": "WHU_FILTER_DOMAIN_TRACKS",
+      "params": [
+        { "name": "rawCatalog", "type": "List" },
+        { "name": "teamTrack", "type": "String" }
+      ],
+      "results": [{ "name": "candidateTracks", "type": "List" }]
+    },
+    {
+      "id": "SCOUT_EVAL_SUBFLOW",
+      "type": "flow",
+      "title": "嵌套子流程：级别与契合度评估",
+      "description": "核验国家级/省部级认定、2027奇数年窗口并计算 fitScore",
+      "reference": "FLOW_WHU_TRACK_SCORING",
+      "params": [{ "name": "candidateTracks", "type": "List" }],
+      "results": [
+        { "name": "level", "type": "String" },
+        { "name": "fitScore", "type": "Integer" }
+      ]
+    },
+    {
+      "id": "SCOUT_TIER_S_MAIN",
+      "type": "event",
+      "title": "生成 S 档国家级主攻方案",
+      "description": "#102 CCF开源 / #113 软件杯 / #107 C4 / #104 软件创新 / #106 4C",
+      "reference": "WHU_BUILD_TIER_S_PLAN",
+      "results": [{ "name": "tierDecision", "type": "String" }]
+    },
+    {
+      "id": "SCOUT_TIER_A_EXPAND",
+      "type": "event",
+      "title": "生成 A 档综合科创冲刺方案",
+      "description": "#148 挑战杯(自强杯·奇数年) / #147 国创 / #127 全球校园AI / #108 华为ICT",
+      "reference": "WHU_BUILD_TIER_A_PLAN",
+      "results": [{ "name": "tierDecision", "type": "String" }]
+    },
+    {
+      "id": "SCOUT_TIER_B_PRACTICE",
+      "type": "event",
+      "title": "归入 B 档省部级实战练兵池",
+      "description": "#109 服务外包(武大省部级) / #126 全国大学生AI安全竞赛",
+      "reference": "WHU_ARCHIVE_TIER_B_POOL",
+      "results": [{ "name": "tierDecision", "type": "String" }]
+    }
+  ],
+  "routes": [
+    { "source": "start", "target": "SCOUT_LOAD_WHU_LIST" },
+    { "source": "SCOUT_LOAD_WHU_LIST", "target": "SCOUT_FILTER_CS_AI" },
+    { "source": "SCOUT_FILTER_CS_AI", "target": "SCOUT_EVAL_SUBFLOW" },
+    {
+      "source": "SCOUT_EVAL_SUBFLOW",
+      "target": "SCOUT_TIER_S_MAIN",
+      "condition": "fitScore >= 90 && level == 'NATIONAL'"
+    },
+    {
+      "source": "SCOUT_EVAL_SUBFLOW",
+      "target": "SCOUT_TIER_A_EXPAND",
+      "condition": "fitScore >= 80"
+    },
+    {
+      "source": "SCOUT_EVAL_SUBFLOW",
+      "target": "SCOUT_TIER_B_PRACTICE",
+      "condition": "default"
+    },
+    { "source": "SCOUT_TIER_S_MAIN", "target": "end" },
+    { "source": "SCOUT_TIER_A_EXPAND", "target": "end" },
+    { "source": "SCOUT_TIER_B_PRACTICE", "target": "end" }
+  ]
+}
